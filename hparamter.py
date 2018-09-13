@@ -18,7 +18,7 @@ vocab_size = 871
 label_size = 22
 #vocab
 word_nums=2634
-class_0=23
+class_0=12
 class_1=5
 class_2=830
 model_path='./models/'

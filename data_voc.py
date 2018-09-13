@@ -39,7 +39,6 @@ def clean_seq(sentence):
     sentence = FullToHalf(sentence)
     sentence = re.sub(ur"[^\u4e00-\u9fffA-Za-z0-9%\._\/\-+]","",sentence)
     sentence = sentence.lower()
-    sentence = [item for item in sentence]
     return sentence
 
 def write_vocabulary(path,word_dict,word_freq):
@@ -73,6 +72,7 @@ def open_file(filename):
         if inx == 0:
             continue
         seq = clean_seq(items[1].strip())
+        seq = [item for item in seq]
         label0 = clean_seq(items[2].strip())
         label1 = items[3].strip()#-1,0,1
         label2 = clean_seq(items[4].strip())
@@ -80,7 +80,10 @@ def open_file(filename):
             print items
             continue
         data_dict = gen_dict(seq,data_dict)
-        label0_dict = gen_dict(label0,label0_dict)
+        if label0!='<unk>' and label0 not in label0_dict:
+            label0_dict[label0]= 1
+        else:
+            label0_dict[label0]+=1
         if label1!='<unk>' and label1 not in label1_dict:
             label1_dict[label1]= 1
         else:
