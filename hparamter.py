@@ -16,3 +16,14 @@ epoch_num = 50 #迭代次数
 time_step = 50
 vocab_size = 871
 label_size = 22
+#vocab
+word_nums=2634
+class_0=23
+class_1=5
+class_2=830
+model_path='./models/'
+voc_path='./vocs/'
+voc_word='vocab.data'
+voc_label=['vocab.lb0','vocab.lb1','vocab.lb2']
+data_train_path='./dataset/train.csv'
+data_test_path='./dataset/test_public.csv'
