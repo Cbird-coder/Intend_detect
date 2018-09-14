@@ -74,7 +74,7 @@ def open_file(filename):
         seq = clean_seq(items[1].strip())
         seq = [item for item in seq]
         label0 = clean_seq(items[2].strip())
-        label1 = items[3].strip()#-1,0,1
+        label1 = clean_seq(items[3].strip())#-1,0,1
         label2 = clean_seq(items[4].strip())
         if len(seq) ==0:
             print items

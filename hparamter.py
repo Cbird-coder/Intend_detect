@@ -12,11 +12,9 @@ filter_sizes = [1,2,3]
 #训练参数
 batch_size = 10
 epoch_num = 50 #迭代次数
-#训练数据相关参数，请不要修改，此处修改会出错
-time_step = 50
-vocab_size = 871
-label_size = 22
-#vocab
+#data set relate
+val_size=0.2
+#vocab relate
 word_nums=2634
 class_0=12
 class_1=5

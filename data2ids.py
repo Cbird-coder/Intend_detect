@@ -1,4 +1,5 @@
 import codecs
+import random
 import hparamter as _hp
 import csv
 from data_voc import clean_seq
@@ -34,7 +35,7 @@ def map_item2id(items, voc, max_len):
     '''
         Look up word or label dict,change sequence to dict number style 
     '''
-    PADDING = 0
+    PADDING = 1
     arr = []
     for i in range(len(items)):
         if voc.has_key(items[i]):
@@ -48,7 +49,7 @@ def map_item2id(items, voc, max_len):
         arr = arr + [PADDING]
     return arr
 
-def gen_data(mode='train'):
+def get_data_list(mode='train'):
     data_path = ''
     if mode == 'train':
         data_path = _hp.data_train_path
@@ -56,18 +57,28 @@ def gen_data(mode='train'):
         data_path = _hp.data_test_path
     else:
         raise 'unknow mode...'
-    data_seq = []
-    data_label0 = []
-    data_label1 = []
+    datas = []
     csv_reader = csv.reader(open(data_path))
     for inx,items in enumerate(csv_reader):
         if inx == 0:
             continue
+        else:
+            datas.append(items)
+    return datas
+
+def gen_data(datas,mode='train'):
+    
+    random.shuffle(datas)
+    
+    data_seq = []
+    data_label0 = []
+    data_label1 = []
+    for items in datas:
         if mode == 'train':
             seq = clean_seq(items[1].strip())
             seq = [item for item in seq]
             label0 = clean_seq(items[2].strip())#class label
-            label1 = items[3].strip()#-1,0,1
+            label1 = clean_seq(items[3].strip())#-1,0,1
             label2 = clean_seq(items[4].strip())#key words
             data_seq.append(seq)
             data_label0.append(label0)
@@ -151,4 +162,50 @@ def data2ids(batch_data,mode='train'):
             if len(data2id) < max_len:
                 data2id = data2id + [0] * (max_len - len(data2id))
             data2ids.append(data2id)
-        return data2ids
+        return np.array(data2ids)
+def id2label(*label):
+    label0 =  label[0]
+    label1 =  label[1]
+    _,_,_,_,label0voc_out,label1voc_out,_ = load_data_labels_voc()
+    label0s = []
+    label1s = []
+    for inx,label0_item in enumerate(label0):
+        label0s.append(label0voc_out[label0_item])
+        label1s.append(label0voc_out[label1[inx]])
+    return label0s,label1s
+def csv_write(datas,label0,label1):
+    content_ids = []
+    contents = []
+    for data in datas:
+        content_ids.append(data[0])
+        contents.append(data[1])
+    csvfile = file('result.csv','wb')
+    writer = csv.writer(csvfile)
+    data = [('content_id','content','subject','sentiment_value')]
+    writer.writerow(data)
+    for inx,data_id in enumerate(content_ids):
+        data = [(data_id,contents[inx],label0[inx],label1[inx])]
+        writer.writerow(data)
+    csvfile.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
