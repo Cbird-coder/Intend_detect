@@ -1,16 +1,18 @@
 import tensorflow as tf
-import hparamter as h_set
+import hparamter as _hp
 
 ########rnn relate function######
 def create_single_layer_rnn():
-	return tf.nn.rnn_cell.LSTMCell(h_set.num_hidden, state_is_tuple=True)
+	return tf.nn.rnn_cell.LSTMCell(_hp.num_hidden, state_is_tuple=True)
 
 def create_rnn_layers(mode):
 	cells = []
-	for i in range(h_set.rnn_layer):
+	for i in range(_hp.rnn_layer):
 		cell = create_single_layer_rnn()
 		if mode=='train':
-			cell = tf.nn.rnn_cell.DropoutWrapper(cell=cell, output_keep_prob=h_set.output_keep_prob)
+			cell = tf.nn.rnn_cell.DropoutWrapper(cell=cell, output_keep_prob=_hp.output_keep_prob)
+		if i >= 1:
+			cell = tf.contrib.rnn.ResidualWrapper(cell)
 		cells.append(cell)
 
 	rnn_cells = tf.nn.rnn_cell.MultiRNNCell(cells, state_is_tuple=True)
@@ -25,7 +27,7 @@ def typical_rnns(mode,x,seq_len):
                 inputs=x,
                 sequence_length=seq_len,
                 dtype=tf.float32,
-                time_major=h_set.time_major
+                time_major=_hp.time_major
             )
 	return outputs
 
@@ -38,7 +40,7 @@ def bi_rnns(mode,x,seq_len):
 													scope = 'bi_lstm',
 													dtype = tf.float32,
 													sequence_length = seq_len,
-													time_major=h_set.time_major)
+													time_major=_hp.time_major)
 	rnn_output = tf.concat(rnn_output,axis=2)
 	fw_c,fw_h = rnn_states[0][-1]
 	bw_c,bw_h = rnn_states[1][-1]
@@ -49,16 +51,16 @@ def bi_rnns(mode,x,seq_len):
 def conv2d(name, x, filter_size, filter_width):
 	with tf.variable_scope(name):
 		kernel = tf.get_variable(name='W',
-			shape=[filter_size, filter_width, 1, h_set.out_channels],
+			shape=[filter_size, filter_width, 1, _hp.out_channels],
 			dtype=tf.float32,
 			initializer=tf.glorot_uniform_initializer())
 
 		b = tf.get_variable(name='b',
-			shape=[h_set.out_channels],
+			shape=[_hp.out_channels],
 			dtype=tf.float32,
 			initializer=tf.constant_initializer())
 
-		con2d_op = tf.nn.conv2d(x, kernel, [1, h_set.strides, h_set.strides, 1], padding='VALID')
+		con2d_op = tf.nn.conv2d(x, kernel, [1, _hp.strides, _hp.strides, 1], padding='VALID')
 
 	return tf.nn.bias_add(con2d_op, b)
 
@@ -85,7 +87,7 @@ def leaky_relu(x, leakiness=0.0):
 
 def max_pool(x,filter_size):
 	return tf.nn.max_pool(x,
-		ksize=[1, h_set.time_step - filter_size + 1, 1, 1],
+		ksize=[1, _hp.time_step - filter_size + 1, 1, 1],
 		strides=[1, 1, 1, 1],
 		padding='VALID',
 		name='max_pool')

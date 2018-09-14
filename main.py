@@ -44,7 +44,7 @@ def train():
             if len(batch) == 0:
                 break
             batch_data = data2ids(batch)
-            _, loss, intent = model.step(sess, "train", batch_data)
+            _, loss = model.step(sess, "train", batch_data)
             train_loss = train_loss + loss
         train_loss /= batch_step
         print("[Epoch {}] train set loss: {}".format(epoch, train_loss))
