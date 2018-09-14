@@ -187,25 +187,3 @@ def csv_write(datas,label0,label1):
         data = [(data_id,contents[inx],label0[inx],label1[inx])]
         writer.writerow(data)
     csvfile.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
