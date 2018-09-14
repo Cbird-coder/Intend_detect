@@ -86,8 +86,7 @@ def leaky_relu(x, leakiness=0.0):
 	return tf.where(tf.less(x, 0.0), leakiness * x, x, name='leaky_relu')
 
 def max_pool(x,filter_size):
-	return tf.nn.max_pool(x,
-		ksize=[1, _hp.time_step - filter_size + 1, 1, 1],
-		strides=[1, 1, 1, 1],
-		padding='VALID',
+	return tf.layers.max_pooling1d(x,
+		pool_size=_hp.max_len - filter_size + 1,
+		strides=1,
 		name='max_pool')

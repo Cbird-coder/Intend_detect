@@ -37,7 +37,7 @@ def FullToHalf(s):
 def clean_seq(sentence):
     sentence = sentence.strip().decode('utf-8')
     sentence = FullToHalf(sentence)
-    sentence = re.sub(ur"[^\u4e00-\u9fffA-Za-z0-9%\._\/\-+]","",sentence)
+    sentence = re.sub(ur"[^\u4e00-\u9fffA-Za-z0-9]","",sentence)
     sentence = sentence.lower()
     return sentence
 
@@ -67,12 +67,17 @@ def open_file(filename):
     label0_dict = {}
     label1_dict = {}
     label2_dict = {}
+    max_len = 0
     csv_reader = csv.reader(open(filename))
     for inx,items in enumerate(csv_reader):
         if inx == 0:
             continue
         seq = clean_seq(items[1].strip())
         seq = [item for item in seq]
+        if len(seq) > max_len:
+            max_len = len(seq)
+        if len(seq) > 50:
+            print ''.join(seq)
         label0 = clean_seq(items[2].strip())
         label1 = clean_seq(items[3].strip())#-1,0,1
         label2 = clean_seq(items[4].strip())
@@ -90,22 +95,22 @@ def open_file(filename):
             label1_dict[label1]+=1
         label2_dict = gen_dict(label2,label2_dict)
 
-    return data_dict,label0_dict,label1_dict,label2_dict
+    return data_dict,label0_dict,label1_dict,label2_dict,max_len
 
 def build_vocabulary(path_label,path_word,word_freq,voc_path):
     if not os.path.exists(_hp.data_train_path):
         print("No corpus exist!!!,please create now....")
     if os.path.isfile(_hp.data_train_path):
-        data_dict,l0_dict,l1_dict,l2_dict = open_file(_hp.data_train_path)
+        data_dict,l0_dict,l1_dict,l2_dict,max_len = open_file(_hp.data_train_path)
     label0_dict_len = write_vocabulary(voc_path + path_label[0],l0_dict,word_freq)
     label1_dict_len = write_vocabulary(voc_path + path_label[1],l1_dict,word_freq)
     label2_dict_len = write_vocabulary(voc_path + path_label[2],l2_dict,word_freq)
     data_dict_len = write_vocabulary(voc_path + path_word,data_dict,word_freq)
-    return [label0_dict_len,label1_dict_len,label2_dict_len],data_dict_len
+    return [label0_dict_len,label1_dict_len,label2_dict_len],data_dict_len,max_len
 def char_label_voc(word_freq,voc_path):
     path_word = _hp.voc_word
     path_label = _hp.voc_label
-    label_size,voc_size = build_vocabulary(path_label,path_word,word_freq,voc_path)
+    label_size,voc_size,max_len = build_vocabulary(path_label,path_word,word_freq,voc_path)
     with open('hparamter.py', 'r') as file_r:
         code_lines = file_r.read().strip().decode('utf-8').split('\n')
         new_lines = []
@@ -125,6 +130,10 @@ def char_label_voc(word_freq,voc_path):
             if 'class_2' in line:
                 line = line.split('=')
                 line[1] = str(label_size[2])
+                line = '='.join(line)
+            if 'max_len' in line:
+                line = line.split('=')
+                line[1] = str(max_len)
                 line = '='.join(line)
             new_lines.append(line)
         with open('hparamter.py', 'w') as file_w:

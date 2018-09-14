@@ -15,10 +15,11 @@ epoch_num = 50 #迭代次数
 #data set relate
 val_size=0.2
 #vocab relate
-word_nums=2634
+max_len=181
+word_nums=2628
 class_0=12
-class_1=5
-class_2=830
+class_1=4
+class_2=827
 model_path='./models/'
 voc_path='./vocs/'
 voc_word='vocab.data'

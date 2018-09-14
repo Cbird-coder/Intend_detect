@@ -31,23 +31,6 @@ def load_data_labels_voc():
     label1_voc,label1voc_out = load_vocs(_hp.voc_path + _hp.voc_label[1])
     label2_voc,label2voc_out = load_vocs(_hp.voc_path + _hp.voc_label[2])
     return data_voc,label0_voc,label1_voc,label2_voc,label0voc_out,label1voc_out,label2voc_out
-def map_item2id(items, voc, max_len):
-    '''
-        Look up word or label dict,change sequence to dict number style 
-    '''
-    PADDING = 1
-    arr = []
-    for i in range(len(items)):
-        if voc.has_key(items[i]):
-            data_id = voc[items[i]]
-        else:
-            data_id = voc['<unk>']
-        arr.append(data_id)
-    if len(arr) < max_len:
-        arr = arr + [PADDING]*(max_len-len(arr)) + [PADDING]
-    else:
-        arr = arr + [PADDING]
-    return arr
 
 def get_data_list(mode='train'):
     data_path = ''
@@ -118,22 +101,28 @@ def data2ids(batch_data,mode='train'):
         data = batch_data[0]
         label0 = batch_data[1]
         label1 = batch_data[2]
+        '''
         max_len = 0
         for data_it in data:
             if len(data_it) > max_len:
                 max_len = len(data_it)
+        '''
         data2ids = []
         label02ids = []
         label12ids = []
         for inx,data_it in enumerate(data):
             dataid=[]
+            if len(data_it) > _hp.max_len:
+                data_it = data_it[:_hp.max_len]
             for item in data_it:
                 id_data = 0
                 if data_voc.has_key(item):
                     id_data = data_voc[item]
                 dataid.append(id_data)
-            if len(dataid) < max_len:
-                dataid = dataid + [0] * (max_len - len(dataid))
+            if len(dataid) < _hp.max_len:
+                dataid = dataid + [1] * (_hp.max_len - len(dataid))
+            else:
+                dataid = dataid + [1]
             data2ids.append(dataid)
 
             label0id = 0
@@ -146,21 +135,26 @@ def data2ids(batch_data,mode='train'):
             label12ids.append(label1id)
         return np.array(data2ids),np.array(label02ids),np.array(label12ids)
     else:
+        '''
         max_len = 0
         for data in batch_data:
-            if len*(data) > max_len:
-                max_len = len*(data)
-
+            if len(data) > max_len:
+                max_len = len(data)
+        '''
         data2ids = []
         for item in batch_data:
             data2id = []
+            if len(item) > _hp.max_len:
+                item = item[:_hp.max_len]
             for it in item:
                 id_data = 0
                 if data_voc.has_key(it):
                     id_data = data_voc[it]
                 data2id.append(id_data)
-            if len(data2id) < max_len:
-                data2id = data2id + [0] * (max_len - len(data2id))
+            if len(data2id) < _hp.max_len:
+                data2id = data2id + [1] * (_hp.max_len - len(data2id))
+            else:
+                data2id = data2id + [1]
             data2ids.append(data2id)
         return np.array(data2ids)
 def id2label(*label):
