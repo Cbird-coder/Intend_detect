@@ -37,15 +37,19 @@ def FullToHalf(s):
 def clean_seq(sentence):
     sentence = sentence.strip().decode('utf-8')
     sentence = FullToHalf(sentence)
-    sentence = re.sub(ur"[^\u4e00-\u9fffA-Za-z0-9]","",sentence)
+    sentence = re.sub(ur"[^\u4e00-\u9fffA-Za-z0-9\-]","",sentence)
     sentence = sentence.lower()
     return sentence
 
-def write_vocabulary(path,word_dict,word_freq):
+def write_vocabulary(path,word_dict,word_freq,no_unk):
+    dict_len = 0
     with open(path,'wb') as f_w:
-        f_w.write('<unk>\n<padding>\n'.encode('utf-8'))
+        if no_unk:
+            pass
+        else:
+            dict_len = 2
+            f_w.write('<unk>\n<padding>\n'.encode('utf-8'))
         word_dict_new = OrderedDict(sorted(word_dict.items(),key=lambda t: t[1],reverse=True))
-        dict_len = 2
         for word,cnt in word_dict_new.items():
             if cnt<word_freq or word == '<unk>' or word =='<padding>':
                 continue
@@ -76,8 +80,6 @@ def open_file(filename):
         seq = [item for item in seq]
         if len(seq) > max_len:
             max_len = len(seq)
-        if len(seq) > 50:
-            print ''.join(seq)
         label0 = clean_seq(items[2].strip())
         label1 = clean_seq(items[3].strip())#-1,0,1
         label2 = clean_seq(items[4].strip())
@@ -102,10 +104,10 @@ def build_vocabulary(path_label,path_word,word_freq,voc_path):
         print("No corpus exist!!!,please create now....")
     if os.path.isfile(_hp.data_train_path):
         data_dict,l0_dict,l1_dict,l2_dict,max_len = open_file(_hp.data_train_path)
-    label0_dict_len = write_vocabulary(voc_path + path_label[0],l0_dict,word_freq)
-    label1_dict_len = write_vocabulary(voc_path + path_label[1],l1_dict,word_freq)
-    label2_dict_len = write_vocabulary(voc_path + path_label[2],l2_dict,word_freq)
-    data_dict_len = write_vocabulary(voc_path + path_word,data_dict,word_freq)
+    label0_dict_len = write_vocabulary(voc_path + path_label[0],l0_dict,word_freq,True)
+    label1_dict_len = write_vocabulary(voc_path + path_label[1],l1_dict,word_freq,True)
+    label2_dict_len = write_vocabulary(voc_path + path_label[2],l2_dict,word_freq,False)
+    data_dict_len = write_vocabulary(voc_path + path_word,data_dict,word_freq,False)
     return [label0_dict_len,label1_dict_len,label2_dict_len],data_dict_len,max_len
 def char_label_voc(word_freq,voc_path):
     path_word = _hp.voc_word
@@ -133,7 +135,7 @@ def char_label_voc(word_freq,voc_path):
                 line = '='.join(line)
             if 'max_len' in line:
                 line = line.split('=')
-                line[1] = str(max_len)
+                line[1] = str(max_len+5)
                 line = '='.join(line)
             new_lines.append(line)
         with open('hparamter.py', 'w') as file_w:

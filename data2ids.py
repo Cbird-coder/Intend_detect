@@ -6,7 +6,7 @@ from data_voc import clean_seq
 import numpy as np
 
 def load_vocs(vocab_file):
-    if (src_vocab_file != ''):
+    if (vocab_file != ''):
         with codecs.open(vocab_file, 'r', encoding='utf-8') as src_f:
             src_vocab_lines = src_f.readlines()
             src_temp_vocab = {}
@@ -47,12 +47,13 @@ def get_data_list(mode='train'):
             continue
         else:
             datas.append(items)
+    random.shuffle(datas)
     return datas
 
 def gen_data(datas,mode='train'):
-    
+
     random.shuffle(datas)
-    
+
     data_seq = []
     data_label0 = []
     data_label1 = []
@@ -81,16 +82,16 @@ def gen_data(datas,mode='train'):
 def gen_train_data(data_train,batch_size,step):
     data = data_train[0]
     label0 = data_train[1]
-    label1 = data_train[1]
+    label1 = data_train[2]
 
     if batch_size * (step + 1) >= len(data):
-        return data[batch_size * step:],label0[batch_size * step:],label1[batch_size * step:]
+        return data[batch_size * step : ],label0[batch_size * step : ],label1[batch_size * step : ]
     else:
-        return data[batch_size * step:batch_size * (step + 1)],\
-            label0[batch_size * step:batch_size * (step + 1)],\
-            label1[batch_size * step:batch_size * (step + 1)]
+        return data[batch_size * step : batch_size * (step + 1)],\
+            label0[batch_size * step : batch_size * (step + 1)],\
+            label1[batch_size * step : batch_size * (step + 1)]
 def gen_inference_data(data_inference,batch_size,step):
-    if batch_size * (step + 1) >= len(data):
+    if batch_size * (step + 1) >= len(data_inference):
         return data_inference[batch_size * step:]
     else:
         return data_inference[batch_size * step:batch_size * (step + 1)]
@@ -101,83 +102,103 @@ def data2ids(batch_data,mode='train'):
         data = batch_data[0]
         label0 = batch_data[1]
         label1 = batch_data[2]
-        '''
+
         max_len = 0
         for data_it in data:
             if len(data_it) > max_len:
                 max_len = len(data_it)
-        '''
+
         data2ids = []
         label02ids = []
         label12ids = []
         for inx,data_it in enumerate(data):
             dataid=[]
-            if len(data_it) > _hp.max_len:
-                data_it = data_it[:_hp.max_len]
             for item in data_it:
                 id_data = 0
                 if data_voc.has_key(item):
                     id_data = data_voc[item]
                 dataid.append(id_data)
-            if len(dataid) < _hp.max_len:
-                dataid = dataid + [1] * (_hp.max_len - len(dataid))
+            if len(dataid) < max_len:
+                dataid = dataid + [1] * (max_len - len(dataid))
             else:
-                dataid = dataid + [1]
-            data2ids.append(dataid)
+                dataid = dataid
+            data2ids.append(np.array(dataid))
 
             label0id = 0
             if label0_voc.has_key(label0[inx]):
                 label0id = label0_voc[label0[inx]]
-            label02ids.append(label0id)
+            label02ids.append(np.array(label0id))
             label1id = 0
             if label1_voc.has_key(label1[inx]):
                 label1id = label1_voc[label1[inx]]
-            label12ids.append(label1id)
+            label12ids.append(np.array(label1id))
+            #print data2ids
         return np.array(data2ids),np.array(label02ids),np.array(label12ids)
     else:
-        '''
         max_len = 0
         for data in batch_data:
             if len(data) > max_len:
                 max_len = len(data)
-        '''
+
         data2ids = []
         for item in batch_data:
             data2id = []
-            if len(item) > _hp.max_len:
-                item = item[:_hp.max_len]
             for it in item:
                 id_data = 0
                 if data_voc.has_key(it):
                     id_data = data_voc[it]
                 data2id.append(id_data)
-            if len(data2id) < _hp.max_len:
-                data2id = data2id + [1] * (_hp.max_len - len(data2id))
+            if len(data2id) < max_len:
+                data2id = data2id + [1] * (max_len - len(data2id))
             else:
-                data2id = data2id + [1]
+                data2id = data2id
             data2ids.append(data2id)
         return np.array(data2ids)
-def id2label(*label):
-    label0 =  label[0]
-    label1 =  label[1]
+
+def eval_process(label,infer_label):
+    acc = 0
+    for inx,label_it in enumerate(label):
+        if label_it == infer_label[inx]:
+            acc = acc + 1
+    acc_rate = float(acc)/float(len(label))
+    return acc_rate
+
+def id2label(labels,task,type='test'):
+    acc,label =  labels
     _,_,_,_,label0voc_out,label1voc_out,_ = load_data_labels_voc()
-    label0s = []
-    label1s = []
-    for inx,label0_item in enumerate(label0):
-        label0s.append(label0voc_out[label0_item])
-        label1s.append(label0voc_out[label1[inx]])
-    return label0s,label1s
-def csv_write(datas,label0,label1):
+    voc = None
+    if task == 'subject':
+        voc = label0voc_out
+    else:
+        voc = label1voc_out
+    label_res = []
+    if type == 'test_save':
+        for inx,label_topK in enumerate(label):
+            label_res.append(voc[label_topK[0]])
+    else:
+        for inx,label_topK in enumerate(label):
+            acc_items = acc[inx]
+            labels_inner = []
+            for inx,label_item in enumerate(label_topK):
+                labels_inner.append(voc[label_item]+':'+str(acc_items[inx]))
+            label_res.append(';'.join(labels_inner))
+    return label_res
+
+def csv_write(datas,label,task):
     content_ids = []
     contents = []
     for data in datas:
         content_ids.append(data[0])
         contents.append(data[1])
+    column_name = task
     csvfile = file('result.csv','wb')
     writer = csv.writer(csvfile)
-    data = [('content_id','content','subject','sentiment_value')]
+    data = ['content_id','content',column_name]
     writer.writerow(data)
     for inx,data_id in enumerate(content_ids):
-        data = [(data_id,contents[inx],label0[inx],label1[inx])]
+        contents[inx] = contents[inx].decode('utf-8')
+        data = [data_id.encode('utf-8'),
+                contents[inx].encode('utf-8'),
+                label[inx].encode('utf-8')]
         writer.writerow(data)
     csvfile.close()

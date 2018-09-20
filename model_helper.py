@@ -1,5 +1,7 @@
 import tensorflow as tf
 import hparamter as _hp
+import time
+import os
 
 ########rnn relate function######
 def create_single_layer_rnn():
@@ -48,45 +50,34 @@ def bi_rnns(mode,x,seq_len):
 	return rnn_output,(fw_h,bw_h)
 
 #cnn layer relate code
-def conv2d(name, x, filter_size, filter_width):
-	with tf.variable_scope(name):
-		kernel = tf.get_variable(name='W',
-			shape=[filter_size, filter_width, 1, _hp.out_channels],
-			dtype=tf.float32,
-			initializer=tf.glorot_uniform_initializer())
-
-		b = tf.get_variable(name='b',
-			shape=[_hp.out_channels],
-			dtype=tf.float32,
-			initializer=tf.constant_initializer())
-
-		con2d_op = tf.nn.conv2d(x, kernel, [1, _hp.strides, _hp.strides, 1], padding='VALID')
-
-	return tf.nn.bias_add(con2d_op, b)
-
-def batch_norm(mode,name, x):
-	"""Batch normalization."""
-	with tf.variable_scope(name):
-		x_bn = tf.contrib.layers.batch_norm(
-			inputs=x,
-			decay=0.9,
-			center=True,
-			scale=True,
-			epsilon=1e-5,
-			updates_collections=None,
-			is_training=mode == 'train',
-			fused=True,
-			data_format='NHWC',
-			zero_debias_moving_mean=True,
-			scope='BatchNorm'
-			)
-		return x_bn
-
 def leaky_relu(x, leakiness=0.0):
 	return tf.where(tf.less(x, 0.0), leakiness * x, x, name='leaky_relu')
 
-def max_pool(x,filter_size):
-	return tf.layers.max_pooling1d(x,
-		pool_size=_hp.max_len - filter_size + 1,
-		strides=1,
-		name='max_pool')
+#load model
+def del_logdir(*logdir):
+	for dir_log in logdir:
+		os.unlink(dir_log)
+def load_model(model, ckpt_path, session):
+	start_time = time.time()
+	try:
+		model.saver.restore(session, ckpt_path)
+	except tf.errors.NotFoundError as e:
+		print("Can't load checkpoint")
+		print("%s" % str(e))
+
+	session.run(tf.tables_initializer())
+	print("loaded model parameters from %s, time %.2fs" %(ckpt_path, time.time() - start_time))
+	return model
+
+def create_or_load_model(model, model_dir, session):
+	latest_ckpt = tf.train.latest_checkpoint(model_dir)
+	if latest_ckpt:
+		model = load_model(model, latest_ckpt, session)
+	else:
+		start_time = time.time()
+		session.run(tf.global_variables_initializer())
+		session.run(tf.tables_initializer())
+		print("created model with fresh parameters, time %.2fs" %(time.time() - start_time))
+
+	global_step = model.global_step.eval(session=session)
+	return model, global_step
