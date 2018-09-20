@@ -5,10 +5,17 @@ http://www.kdd.org/kdd2017/papers/view/a-hybrid-framework-for-text-modeling-with
 
 
 #usage:
+
 #train model
+
 python data_voc.py
+
 python main.py --mode=train --task=subject
+
 python main.py --mode=train --task=sentiment
+
 #infer
+
 python main.py --mode=test --task=subject
+
 python main.py --mode=test --task=sentiment
