@@ -19,3 +19,8 @@ python main.py --mode=train --task=sentiment
 python main.py --mode=test --task=subject
 
 python main.py --mode=test --task=sentiment
+
+#训练与测试语料说明
+
+‘’语料使用汽车评测相关语料。
+测试模型以及代码再demo文件夹下面
